@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>六爻断卦平台</title>
+<style>
+:root{--bg:#16130e;--card:#221d15;--ink:#e8ddc8;--dim:#9a8d72;--gold:#c9a24b;--red:#c0563f;--green:#7a9c5e;--line:#3a3225}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.7 "Songti SC","Noto Serif SC",serif;max-width:860px;margin:0 auto;padding:24px 16px 80px}
+h1{font-size:26px;letter-spacing:8px;text-align:center;color:var(--gold);margin:12px 0 2px}
+.sub{text-align:center;color:var(--dim);font-size:12px;letter-spacing:3px;margin-bottom:28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:18px}
+.card h2{font-size:15px;color:var(--gold);letter-spacing:2px;margin-bottom:14px;border-left:3px solid var(--gold);padding-left:10px}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:36px;text-align:center;color:var(--dim);cursor:pointer;transition:.2s}
+.drop:hover,.drop.on{border-color:var(--gold);color:var(--gold)}
+img.preview{max-width:100%;max-height:300px;border-radius:8px;display:block;margin:12px auto}
+label{display:block;font-size:12px;color:var(--dim);margin:10px 0 3px}
+input,select,textarea{width:100%;background:#1a160f;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px 10px;font:inherit}
+textarea{resize:vertical;min-height:60px}
+.row{display:flex;gap:10px}.row>div{flex:1}
+.warn{background:#3a2a1a;border:1px solid #7a5c2e;border-radius:6px;padding:8px 12px;font-size:13px;color:#e0b978;margin:6px 0}
+button{background:var(--gold);color:#1a150c;border:0;border-radius:6px;padding:10px 26px;font:inherit;font-weight:700;letter-spacing:2px;cursor:pointer}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--dim)}
+.dongbox{display:flex;gap:8px;flex-wrap:wrap}
+.dongbox label{display:flex;align-items:center;gap:4px;margin:0;color:var(--ink);font-size:14px}
+.dongbox input{width:auto}
+.stages{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0}
+.stage{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
+.stage.on{border-color:var(--gold);color:var(--gold);animation:pulse 1.2s infinite}
+.stage.done{border-color:var(--green);color:var(--green)}
+@keyframes pulse{50%{opacity:.4}}
+pre.facts{white-space:pre-wrap;font:13px/1.8 ui-monospace,monospace;color:#cfc3a8;background:#1a160f;border-radius:8px;padding:14px;overflow-x:auto}
+.direction{font-size:30px;letter-spacing:6px;text-align:center;margin:8px 0}
+.direction.ji{color:var(--green)}.direction.xiong{color:var(--red)}.direction.mixed{color:var(--gold)}
+.school{border:1px solid var(--line);border-radius:8px;padding:12px;margin:8px 0;font-size:13px}
+.school b{color:var(--gold)}
+.cite{color:var(--dim);font-size:12px;border-left:2px solid var(--line);padding-left:8px;margin-top:6px}
+.sec{margin:14px 0}.sec h3{font-size:13px;color:var(--gold);letter-spacing:2px;margin-bottom:6px}
+.chat{max-height:400px;overflow-y:auto;margin-bottom:10px}
+.msg{padding:8px 12px;border-radius:8px;margin:6px 0;font-size:14px;white-space:pre-wrap}
+.msg.u{background:#2a2418;margin-left:40px}.msg.a{background:#1a160f;margin-right:40px}
+.hide{display:none}
+.err{color:var(--red)}
+.conf{color:var(--dim);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<h1>六爻断卦</h1>
+<div class="sub">规则引擎 × 四派多Agent × 典籍引证</div>
+
+<div class="card" id="stepUpload">
+  <h2>一 · 上传卦图</h2>
+  <div class="drop" id="drop">点击或拖入排盘截图<input type="file" id="file" accept="image/*" hidden></div>
+  <img class="preview hide" id="preview">
+  <div id="recogState" class="conf"></div>
+</div>
+
+<div class="card hide" id="stepConfirm">
+  <h2>二 · 确认卦象</h2>
+  <div id="warnings"></div>
+  <label>求测事项（必填，断卦准确性的第一前提）</label>
+  <textarea id="question" placeholder="例：自占今年事业能否升迁 / 代母占病何时痊愈"></textarea>
+  <div class="row">
+    <div><label>类别</label><select id="category">
+      <option>求财</option><option>婚姻</option><option>官司</option><option>疾病</option>
+      <option>出行</option><option>失物</option><option>事业</option><option>子女</option>
+      <option>家宅</option><option selected>其他</option></select></div>
+    <div><label>本卦</label><select id="bengua"></select></div>
+  </div>
+  <div class="row">
+    <div><label>年柱</label><input id="gzYear" placeholder="丙午"></div>
+    <div><label>月柱</label><input id="gzMonth" placeholder="癸巳"></div>
+    <div><label>日柱</label><input id="gzDay" placeholder="壬寅"></div>
+    <div><label>时柱(可空)</label><input id="gzHour" placeholder="甲辰"></div>
+  </div>
+  <label>动爻（自下而上）</label>
+  <div class="dongbox" id="dongbox"></div>
+  <div style="margin-top:14px;display:flex;gap:10px">
+    <button id="btnPreview" class="ghost">核对卦理</button>
+    <button id="btnGo">开始断卦</button>
+  </div>
+  <pre class="facts hide" id="factsPreview"></pre>
+</div>
+
+<div class="card hide" id="stepRun">
+  <h2>三 · 多Agent断卦中</h2>
+  <div class="stages" id="stages"></div>
+  <div id="runErr" class="err"></div>
+</div>
+
+<div class="card hide" id="stepReport">
+  <h2>四 · 断卦报告</h2>
+  <div class="direction" id="rDirection"></div>
+  <div class="conf" id="rConf"></div>
+  <div class="sec"><h3>断语</h3><div id="rVerdict"></div></div>
+  <div class="sec"><h3>核心卦理</h3><div id="rReasoning"></div></div>
+  <div class="sec"><h3>应期</h3><div id="rYingqi"></div></div>
+  <div class="sec"><h3>用神终审</h3><div id="rYongshen"></div></div>
+  <div class="sec" id="secDisagree"><h3>流派分歧与裁决</h3><div id="rDisagree"></div></div>
+  <div class="sec" id="secXiang"><h3>象法补充</h3><div id="rXiang"></div></div>
+  <div class="sec"><h3>宜忌建议</h3><div id="rAdvice"></div></div>
+  <div class="sec"><h3>四派原始意见</h3><div id="rSchools"></div></div>
+  <div class="sec"><h3>卦理事实表</h3><pre class="facts" id="rFacts"></pre></div>
+</div>
+
+<div class="card hide" id="stepChat">
+  <h2>五 · 追问</h2>
+  <div class="chat" id="chat"></div>
+  <div class="row">
+    <div style="flex:4"><input id="askInput" placeholder="补充背景或追问细节，如：其实我上月已递交申请…"></div>
+    <div><button id="btnAsk">问</button></div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let SID=null, RECOG=null;
+
+// 初始化
+fetch('/api/guaming').then(r=>r.json()).then(names=>{
+  $('bengua').innerHTML=names.map(n=>`<option>${n}</option>`).join('');
+});
+const db=$('dongbox');
+for(let i=1;i<=6;i++){db.innerHTML+=`<label><input type="checkbox" value="${i}">${'初二三四五上'[i-1]}爻</label>`;}
+
+// 上传识别
+$('drop').onclick=()=>$('file').click();
+$('drop').ondragover=e=>{e.preventDefault();$('drop').classList.add('on')};
+$('drop').ondragleave=()=>$('drop').classList.remove('on');
+$('drop').ondrop=e=>{e.preventDefault();$('drop').classList.remove('on');handleFile(e.dataTransfer.files[0])};
+$('file').onchange=e=>handleFile(e.target.files[0]);
+
+async function handleFile(f){
+  if(!f)return;
+  $('preview').src=URL.createObjectURL(f);$('preview').classList.remove('hide');
+  $('recogState').textContent='识别中…';
+  const fd=new FormData();fd.append('image',f);
+  const r=await(await fetch('/api/recognize',{method:'POST',body:fd})).json();
+  RECOG=r;
+  $('recogState').textContent=r.data?'识别完成，请核对下方信息':'自动识别失败，请手动填写';
+  $('stepConfirm').classList.remove('hide');
+  $('warnings').innerHTML=(r.warnings||[]).map(w=>`<div class="warn">⚠ ${w}</div>`).join('');
+  if(r.data){
+    const g=r.data.ganzhi||{};
+    $('gzYear').value=g.year||'';$('gzMonth').value=g.month||'';
+    $('gzDay').value=g.day||'';$('gzHour').value=g.hour||'';
+    $('bengua').value=r.data.bengua_name;
+    document.querySelectorAll('#dongbox input').forEach(c=>{
+      c.checked=(r.data.dong||[]).includes(+c.value)});
+  }
+  $('stepConfirm').scrollIntoView({behavior:'smooth'});
+}
+
+function confirmed(){
+  return {question:$('question').value.trim(),category:$('category').value,
+    ganzhi:{year:$('gzYear').value.trim(),month:$('gzMonth').value.trim(),
+            day:$('gzDay').value.trim(),hour:$('gzHour').value.trim()},
+    bengua_name:$('bengua').value,
+    dong:[...document.querySelectorAll('#dongbox input:checked')].map(c=>+c.value)};
+}
+
+$('btnPreview').onclick=async()=>{
+  try{
+    const r=await(await fetch('/api/preview',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(confirmed())})).json();
+    $('factsPreview').textContent=r.facts_text||JSON.stringify(r);
+    $('factsPreview').classList.remove('hide');
+  }catch(e){alert('卦理计算失败: '+e)}
+};
+
+const STAGE_NAMES={facts:'卦理事实',yongshen:'定用神',wangshuai:'权衡旺衰',
+  dongbian:'动变分析',yingqi:'应期推断',schools:'四派并行断卦',judge:'终审裁决',done:'完成'};
+
+$('btnGo').onclick=async()=>{
+  const c=confirmed();
+  if(!c.question){alert('请填写求测事项——问什么直接决定用神取舍');return}
+  if(!c.ganzhi.month||!c.ganzhi.day){alert('月柱、日柱必填');return}
+  $('btnGo').disabled=true;
+  const r=await(await fetch('/api/interpret',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(c)})).json();
+  SID=r.session_id;
+  $('stepRun').classList.remove('hide');
+  $('stepRun').scrollIntoView({behavior:'smooth'});
+  poll();
+};
+
+async function poll(){
+  const s=await(await fetch('/api/session/'+SID)).json();
+  const keys=Object.keys(STAGE_NAMES);
+  $('stages').innerHTML=keys.map((k,i)=>{
+    const cur=keys.indexOf(s.stage);
+    const cls=i<cur?'done':(i===cur?'on':'');
+    return `<span class="stage ${cls}">${STAGE_NAMES[k]}</span>`}).join('');
+  if(s.error){$('runErr').textContent='出错: '+s.error;$('btnGo').disabled=false;return}
+  if(s.stage==='done'){render(s);return}
+  setTimeout(poll,1500);
+}
+
+function render(s){
+  const rep=s.report||{};
+  $('stepReport').classList.remove('hide');$('stepChat').classList.remove('hide');
+  const d=rep.direction||'—';
+  $('rDirection').textContent=d;
+  $('rDirection').className='direction '+(d==='吉'?'ji':d==='凶'?'xiong':'mixed');
+  $('rConf').textContent=`${rep.degree||''} · 置信度 ${Math.round((rep.confidence||0)*100)}%`;
+  $('rVerdict').textContent=rep.verdict||'';
+  $('rReasoning').textContent=rep.reasoning||'';
+  const y=rep.yingqi||{};
+  $('rYingqi').textContent=[y.best,(y.alternatives||[]).length?'备选: '+y.alternatives.join('、'):'',
+    y.basis?'依据: '+y.basis:''].filter(Boolean).join('\n');
+  const yr=rep.yongshen_review||{};
+  $('rYongshen').textContent=`${yr.final_yongshen||''} ${yr.agree===false?'（推翻流水线取用）':''}\n${yr.note||''}`;
+  const dis=rep.disagreements||[];
+  $('secDisagree').style.display=dis.length?'':'none';
+  $('rDisagree').innerHTML=dis.map(x=>
+    `<div class="school"><b>${x.issue}</b><br>${x.sides||''}<br>裁决：${x.ruling||''}</div>`).join('');
+  $('secXiang').style.display=rep.xiang_notes?'':'none';
+  $('rXiang').textContent=rep.xiang_notes||'';
+  $('rAdvice').textContent=Array.isArray(rep.advice)?rep.advice.join('\n'):rep.advice||'';
+  $('rSchools').innerHTML=(s.schools||[]).map(sc=>{
+    const c=sc.conclusion||{};
+    const cites=(sc.citations||[]).map(x=>`<div class="cite">《${x.book}》：${x.text}</div>`).join('');
+    return `<div class="school"><b>${sc.school}</b> ${c.direction||''}（${c.degree||''}）置信${Math.round((sc.confidence||0)*100)}%<br>
+      ${c.summary||''}<br><span style="color:var(--dim)">${(sc.arguments||[]).join('；')}</span>${cites}</div>`;
+  }).join('');
+  $('rFacts').textContent=s.facts_text||'';
+  $('stepReport').scrollIntoView({behavior:'smooth'});
+}
+
+$('btnAsk').onclick=ask;
+$('askInput').onkeydown=e=>{if(e.key==='Enter')ask()};
+async function ask(){
+  const q=$('askInput').value.trim();if(!q||!SID)return;
+  $('askInput').value='';
+  $('chat').innerHTML+=`<div class="msg u">${q}</div><div class="msg a" id="pending">…</div>`;
+  $('chat').scrollTop=1e9;
+  const r=await(await fetch(`/api/session/${SID}/ask`,{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q})})).json();
+  document.getElementById('pending').textContent=r.answer;
+  document.getElementById('pending').removeAttribute('id');
+  $('chat').scrollTop=1e9;
+}
+</script>
+</body>
+</html>
